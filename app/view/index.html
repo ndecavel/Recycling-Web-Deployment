@@ -4,15 +4,19 @@
   <link rel='stylesheet' href='../static/style.css'>
   <script src='../static/client.js'></script>
 </head>
+
 <body>
 <div>
   <div class='center'>
-    <div class='title'>Classify Bear Images 🐻</div>
+    <div class='title'>Trash Classification ♻️</div>
+
     <p>
-      Use images of <strong>teddy</strong> bears, <strong>black</strong> bears, <strong>grizzly</strong> bears, or
-      all three!
+      Take or upload a picture of <strong>trash</strong>! 
     </p>
+    
+
     <div class='content'>
+
       <div class='no-display'>
         <input id='file-input'
                class='no-display'
@@ -21,21 +25,101 @@
                accept='image/*'
                onchange='showPicked(this)'>
       </div>
-      <button class='choose-file-button' type='button' onclick='showPicker()'>Select Image</button>
+
+      <button class='choose-file-button' type='button' onclick='showPicker()'>
+        Select Image
+      </button>
+
       <div class='upload-label'>
-        <label id='upload-label'>No file chosen</label>
+        <label id='upload-label'>
+          No file chosen
+        </label>
       </div>
+    
       <div>
         <img id='image-picked' class='no-display' alt='Chosen Image' height='200'>
       </div>
+
       <div class='analyze'>
-        <button id='analyze-button' class='analyze-button' type='button' onclick='analyze()'>Analyze</button>
+        <button id='analyze-button' class='analyze-button' type='button' onclick='analyze()'>
+          Analyze
+        </button>
       </div>
+      
       <div class='result-label'>
         <label id='result-label'></label>
       </div>
+      
+      
+      <div class='feedback-buttons'>
+        <div class='right' id='right'>
+            <button id='right-button' class='right-button' onclick= "submit()" type='button'>
+              Got it right!
+            </button>
+        </div>
+
+        <div class='right' id='wrong'>
+          <button id='wrong-button' class='wrong-button' onclick= "myFunction()" type='button'>
+            Wrong answer?
+          </button>
+        </div>
+      </div>
+
+      <script>
+      var a = document.getElementById('wrong').style.display = 'none'
+      a.style.display = 'none'
+      </script>
+      
+      <script>
+      var ele = document.getElementById('right').style.display = 'none'
+      ele.style.display = 'none'
+       //hide everything
+       function myFunction(){
+         var x = document.getElementById('center1')
+         if(x.style.display == 'none'){
+          x.style.display = "block";
+         }
+         else{
+          x.style.display = "none";
+         }
+       }
+      </script>
+    <div>
+        <div class='center1' id='center1'>
+            <p>
+            Choose the right <strong>category</strong> to help us improve! 
+            </p>
+            <div class='wrong-feedback'>
+                <div class='select'>
+                  <select id="select-menu">
+                      <option> --Please choose-- </option>
+                      <option value="Cardboard">Cardboard</option>
+                      <option value="E-Waste">E-waste</option>
+                      <option value="Glass">Glass</option>
+                      <option value="Metal">Metal</option>
+                      <option value="Paper">Paper</option>
+                      <option value="Plastic">Plastic</option>
+                      <option value="Trash">Trash</option>
+                  </select>
+                </div>
+                
+                <div class='submit'>
+                  <button type="button" id='submit-button1' class='submit-button1'  value="SUBMIT" onclick="submit2()"  >
+                  Submit
+                  </button>
+                </div>
+            </div>
+                
+        </div>
+    
+    
+    
     </div>
+    <script>
+        var ele = document.getElementById("center1")//.style.display = "none";
+        ele.style.display = 'none';
+        </script>
+    </body>
   </div>
 </div>
-</body>
 </html>
