@@ -1,18 +1,27 @@
 import aiohttp
 import asyncio
 import uvicorn
+import os
 from fastai import *
 from fastai.vision import *
+import random
+import string
 from io import BytesIO
+from io import StringIO
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
+from google.cloud import storage
+from PIL import Image
+import pandas as pd
 
-export_file_url = 'https://www.dropbox.com/s/6bgq8t6yextloqp/export.pkl?raw=1'
+# implement our model here 
+export_file_url = 'https://www.dropbox.com/s/yuwyshs6tmwp46b/trained_model_1%20%281%29.pkl?raw=1'
 export_file_name = 'export.pkl'
 
-classes = ['black', 'grizzly', 'teddys']
+#list trash categories here 
+classes = ['Cardboard', 'E-Waste', 'Glass', 'Metal', 'Paper', 'Plastic', 'Trash']
 path = Path(__file__).parent
 
 app = Starlette()
@@ -48,21 +57,75 @@ tasks = [asyncio.ensure_future(setup_learner())]
 learn = loop.run_until_complete(asyncio.gather(*tasks))[0]
 loop.close()
 
-
+# define the root path
 @app.route('/')
 async def homepage(request):
     html_file = path / 'view' / 'index.html'
     return HTMLResponse(html_file.open().read())
 
 
+# define the analyze button action    
 @app.route('/analyze', methods=['POST'])
 async def analyze(request):
     img_data = await request.form()
     img_bytes = await (img_data['file'].read())
     img = open_image(BytesIO(img_bytes))
-    prediction = learn.predict(img)[0]
-    return JSONResponse({'result': str(prediction)})
+    prediction = str(learn.predict(img)[0])
+    print(prediction)
+    if(prediction != 'Trash' and prediction != 'E-Waste'):
+        prediction = 'Recyclable (' + prediction + ')'
+    return JSONResponse({'result': prediction})
 
+# define the submit action    
+# specify the saving location of submitted images
+@app.route('/submit', methods=['POST'])
+async def submit(request):
+    img_data = (await request.form())
+    for key in img_data.keys():
+        pred = key
+        start = 'F'
+        d = 0
+        print(pred, '==', img_data['pre'])
+        if(pred == img_data['pre']):
+            start = 'T'
+            d = 1
+        break
+    img_bytes = await (img_data[pred].read())
+    img = open_image(BytesIO(img_bytes))
+    prediction = pred
+    # bucket upload...
+    # """Uploads a file to the bucket."""
+    export_file = 'https://www.dropbox.com/s/71k0wvn42a4y5h3/engaged-cosine-245518-8280e6195129.json?raw=1'
+    await download_file(export_file, path / 'JSON.json')
+    storage_client = storage.Client.from_service_account_json(
+        'app/JSON.json')
+    buckets = list(storage_client.list_buckets())
+    bucket = storage_client.get_bucket('amli_trashnet_photos')
+    alias = start
+    alias = alias + ''.join(random.choice(string.ascii_letters) for _ in range(32))
+    # GStorage  
+    print(alias, 'to', prediction)
+    if(prediction[0] == ' '):
+        prediction = prediction[1:]
+    blobstr = 'Web_data/' + prediction + '/' + alias
+    csvobject = 'Web_data/Web_App_DB.csv'
+    csvblob = bucket.blob(csvobject)
+    # df = pd.read_csv('gs://Web_data/Web_App_DB.csv',encoding='utf-8')
+    a = csvblob.download_as_string()
+    df = pd.read_csv(BytesIO(a))
+    blob = bucket.blob(blobstr)
+    blob.upload_from_string(img_bytes, content_type = 'image/jpeg')
+    #make new row for df
+    link = 'https://storage.cloud.google.com/amli_trashnet_photos/Web_data/'+ prediction + '/' + alias + '?folder=true&organizationId=765589025310'
+    row = [link, img_data['pre'], prediction, str(d)]
+    df2 = pd.DataFrame([row], columns=df.columns)
+    df.reset_index(drop=True, inplace=True)
+    df2.reset_index(drop=True, inplace=True)
+    df = df.append(df2)
+    newcsv = df.to_csv(index = False)
+    csvblob.upload_from_string(newcsv)
+    
+    return JSONResponse({'result': str(prediction)})
 
 if __name__ == '__main__':
     if 'serve' in sys.argv:
